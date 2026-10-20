@@ -43,6 +43,8 @@ switch ($page) {
     // Search
     case 'search': (new SearchController())->index(); break;
 
+    
+
     // Feed (default)
     case 'feed':
     default:

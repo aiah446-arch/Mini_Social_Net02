@@ -54,12 +54,21 @@ class PostController {
     public function feed() {
         $this->requireLogin();
         $posts = $this->postModel->getAll();
-        $pageTitle = 'Newsfeed - Mini Social';
+        $pageTitle = 'Newsfeed - NEO';
         require __DIR__ . '/../views/posts/feed.php';
     }
 
+        // -------------------------
+    // MARKETPLACE
     // -------------------------
-    // CREATE POST
+    public function marketplace() {
+    $this->requireLogin();
+    $products = $this->postModel->getMarketplaceItems();
+    $pageTitle = 'Marketplace - NEO';
+    require __DIR__ . '/../views/posts/marketplace.php'; // <--- FIXED
+}
+    // -------------------------
+    // CREATE POST (Handles Social & Products)
     // -------------------------
     public function create() {
         $this->requireLogin();
@@ -69,9 +78,20 @@ class PostController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $content = trim($_POST['content'] ?? '');
+            $post_type = $_POST['post_type'] ?? 'social';
+            
+            // Product specific fields
+            $product_title = !empty($_POST['product_title']) ? trim($_POST['product_title']) : null;
+            $price = !empty($_POST['price']) ? floatval($_POST['price']) : null;
+            $product_condition = !empty($_POST['product_condition']) ? $_POST['product_condition'] : null;
+            $category = !empty($_POST['category']) ? $_POST['category'] : null;
+            
             $image = null;
 
-            if ($content === '') {
+            // If it's a product, content might be optional, but let's require a title
+            if ($post_type === 'product' && empty($product_title)) {
+                $error = 'Product title is required for listings.';
+            } elseif ($post_type === 'social' && $content === '') {
                 $error = 'Post content cannot be empty.';
             } elseif (strlen($content) > 1000) {
                 $error = 'Post is too long (max 1000 characters).';
@@ -84,7 +104,18 @@ class PostController {
                 }
 
                 if (empty($error)) {
-                    if ($this->postModel->create($_SESSION['user_id'], $content, $image)) {
+                    // Pass all the new variables to the Model
+                    if ($this->postModel->create(
+                        $_SESSION['user_id'], 
+                        $content, 
+                        $image, 
+                        $post_type, 
+                        $product_title, 
+                        $price, 
+                        $product_condition, 
+                        $category
+                    )) {
+                        // If it's a product, maybe redirect to marketplace? For now, feed is fine.
                         header('Location: index.php?page=feed');
                         exit;
                     } else {
@@ -94,7 +125,7 @@ class PostController {
             }
         }
 
-        $pageTitle = 'Create Post - Mini Social';
+        $pageTitle = 'Create Post - NEO';
         require __DIR__ . '/../views/posts/create.php';
     }
 
@@ -152,7 +183,7 @@ class PostController {
             }
         }
 
-        $pageTitle = 'Edit Post - Mini Social';
+        $pageTitle = 'Edit Post - NEO';
         require __DIR__ . '/../views/posts/edit.php';
     }
 
