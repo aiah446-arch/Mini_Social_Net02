@@ -23,20 +23,49 @@ class CommentController {
         }
     }
 
-    // Create comment
+    // Create comment (UPDATED for AJAX - No Refresh)
     public function create() {
         $this->requireLogin();
 
+        $status = 'error';
+        $html = '';
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $post_id = (int)($_POST['post_id'] ?? 0);
+            $type = $_POST['type'] ?? 'post'; 
             $content = trim($_POST['content'] ?? '');
 
             if ($post_id > 0 && $content !== '' && strlen($content) <= 500) {
-                $this->commentModel->create($post_id, $_SESSION['user_id'], $content);
+                if ($this->commentModel->create($post_id, $_SESSION['user_id'], $content, $type)) {
+                    $status = 'success';
+
+                    // If AJAX request, fetch the newly created comment and render it
+                    if (isset($_POST['ajax'])) {
+                        $comments = $this->commentModel->getByPost($post_id, $type);
+                        $newComment = end($comments); // Get the last inserted comment
+
+                        if ($newComment) {
+                            // Start output buffering to capture the HTML of _item.php
+                            ob_start();
+                            $comment = $newComment; // Set the variable expected by _item.php
+                            require __DIR__ . '/../views/comments/_item.php';
+                            $html = ob_get_clean();
+                        }
+                    }
+                }
             }
         }
 
-        header('Location: index.php?page=feed');
+        // If this is an AJAX request, return JSON with status and HTML
+        if (isset($_POST['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => $status, 'html' => $html]);
+            exit;
+        }
+
+        // Otherwise, normal redirect
+        $redirect = $_SERVER['HTTP_REFERER'] ?? 'index.php?page=feed';
+        header("Location: " . $redirect);
         exit;
     }
 

@@ -1,16 +1,21 @@
 <?php
 // app/controllers/PostController.php
-// Handles posts: feed, create, edit, delete
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../models/PostModel.php';
+require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../models/MessageModel.php';
 
 class PostController {
     private $postModel;
+    private $userModel;
+    private $messageModel;
 
     public function __construct() {
         $db = (new Database())->getConnection();
         $this->postModel = new PostModel($db);
+        $this->userModel = new UserModel($db);
+        $this->messageModel = new MessageModel($db);
     }
 
     private function requireLogin() {
@@ -20,7 +25,6 @@ class PostController {
         }
     }
 
-    // Handle file upload — returns filename or null
     private function handleUpload($fileKey) {
         if (!isset($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
             return ['filename' => null, 'error' => null];
@@ -28,7 +32,7 @@ class PostController {
 
         $file = $_FILES[$fileKey];
         $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $maxSize = 3 * 1024 * 1024; // 3MB
+        $maxSize = 3 * 1024 * 1024;
 
         if (!in_array($file['type'], $allowed)) {
             return ['filename' => null, 'error' => 'Only JPG, PNG, GIF, or WEBP images allowed.'];
@@ -48,28 +52,17 @@ class PostController {
         return ['filename' => null, 'error' => 'Failed to upload image.'];
     }
 
-    // -------------------------
-    // NEWSFEED
-    // -------------------------
     public function feed() {
         $this->requireLogin();
         $posts = $this->postModel->getAll();
-        $pageTitle = 'Newsfeed - NEO';
+        $currentUser = $this->userModel->findById($_SESSION['user_id']);
+        
+        $unreadMsgs = $this->messageModel->countUnreadMessages($_SESSION['user_id']);
+
+        $pageTitle = 'NEO';  // <--- CHANGED FROM 'Newsfeed - NEO'
         require __DIR__ . '/../views/posts/feed.php';
     }
 
-        // -------------------------
-    // MARKETPLACE
-    // -------------------------
-    public function marketplace() {
-    $this->requireLogin();
-    $products = $this->postModel->getMarketplaceItems();
-    $pageTitle = 'Marketplace - NEO';
-    require __DIR__ . '/../views/posts/marketplace.php'; // <--- FIXED
-}
-    // -------------------------
-    // CREATE POST (Handles Social & Products)
-    // -------------------------
     public function create() {
         $this->requireLogin();
 
@@ -78,20 +71,9 @@ class PostController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $content = trim($_POST['content'] ?? '');
-            $post_type = $_POST['post_type'] ?? 'social';
-            
-            // Product specific fields
-            $product_title = !empty($_POST['product_title']) ? trim($_POST['product_title']) : null;
-            $price = !empty($_POST['price']) ? floatval($_POST['price']) : null;
-            $product_condition = !empty($_POST['product_condition']) ? $_POST['product_condition'] : null;
-            $category = !empty($_POST['category']) ? $_POST['category'] : null;
-            
             $image = null;
 
-            // If it's a product, content might be optional, but let's require a title
-            if ($post_type === 'product' && empty($product_title)) {
-                $error = 'Product title is required for listings.';
-            } elseif ($post_type === 'social' && $content === '') {
+            if ($content === '') {
                 $error = 'Post content cannot be empty.';
             } elseif (strlen($content) > 1000) {
                 $error = 'Post is too long (max 1000 characters).';
@@ -104,18 +86,7 @@ class PostController {
                 }
 
                 if (empty($error)) {
-                    // Pass all the new variables to the Model
-                    if ($this->postModel->create(
-                        $_SESSION['user_id'], 
-                        $content, 
-                        $image, 
-                        $post_type, 
-                        $product_title, 
-                        $price, 
-                        $product_condition, 
-                        $category
-                    )) {
-                        // If it's a product, maybe redirect to marketplace? For now, feed is fine.
+                    if ($this->postModel->create($_SESSION['user_id'], $content, $image)) {
                         header('Location: index.php?page=feed');
                         exit;
                     } else {
@@ -125,24 +96,17 @@ class PostController {
             }
         }
 
-        $pageTitle = 'Create Post - NEO';
+        $pageTitle = 'Newsfeed - NEO';  // <--- CHANGED FROM 'Create Post - NEO'
         require __DIR__ . '/../views/posts/create.php';
     }
 
-    // -------------------------
-    // EDIT POST
-    // -------------------------
     public function edit() {
         $this->requireLogin();
 
         $id = (int)($_GET['id'] ?? 0);
         $post = $this->postModel->findById($id);
 
-        if (!$post) {
-            header('Location: index.php?page=feed');
-            exit;
-        }
-        if ($post['user_id'] != $_SESSION['user_id']) {
+        if (!$post || $post['user_id'] != $_SESSION['user_id']) {
             header('Location: index.php?page=feed');
             exit;
         }
@@ -183,13 +147,10 @@ class PostController {
             }
         }
 
-        $pageTitle = 'Edit Post - NEO';
+        $pageTitle = 'NEO';  // <--- CHANGED FROM 'Edit Post - NEO'
         require __DIR__ . '/../views/posts/edit.php';
     }
 
-    // -------------------------
-    // DELETE POST
-    // -------------------------
     public function delete() {
         $this->requireLogin();
 
@@ -206,6 +167,34 @@ class PostController {
             $this->postModel->delete($id);
         }
 
+        header('Location: index.php?page=feed');
+        exit;
+    }
+    public function share() {
+        $this->requireLogin();
+
+        $post_id = (int)($_POST['post_id'] ?? 0);
+        $type = $_POST['type'] ?? 'post';
+        $content = trim($_POST['caption'] ?? '');
+        
+        if ($content === '') {
+            $content = "Shared a post!";
+        }
+
+        $status = 'error';
+        if ($post_id > 0) {
+            if ($this->postModel->create($_SESSION['user_id'], $content, null, $post_id, $type)) {
+                $status = 'success';
+            }
+        }
+
+        // If AJAX request, return JSON
+        if (isset($_POST['ajax'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => $status]);
+            exit;
+        }
+        
         header('Location: index.php?page=feed');
         exit;
     }

@@ -30,9 +30,7 @@ class UserModel {
 
     // Create new user (register)
     public function create($username, $password, $full_name) {
-        // Hash the password securely
         $hashed = password_hash($password, PASSWORD_DEFAULT);
-
         $sql = "INSERT INTO {$this->table} (username, password, full_name) 
                 VALUES (:username, :password, :full_name)";
         $stmt = $this->conn->prepare($sql);
@@ -56,7 +54,6 @@ class UserModel {
                     WHERE id = :id";
             $stmt = $this->conn->prepare($sql);
         }
-
         $stmt->bindParam(':full_name', $full_name);
         $stmt->bindParam(':bio', $bio);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
@@ -83,5 +80,35 @@ class UserModel {
         $stmt->bindParam(':kw', $like);
         $stmt->execute();
         return $stmt->fetchAll();
+    }
+
+    // ==========================================
+    // NEW: FOLLOW / UNFOLLOW FUNCTIONS
+    // ==========================================
+
+    public function isFollowing($follower_id, $following_id) {
+        $sql = "SELECT id FROM follows WHERE follower_id = :follower_id AND following_id = :following_id LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':follower_id' => $follower_id, ':following_id' => $following_id]);
+        return $stmt->fetch() !== false;
+    }
+
+    public function follow($follower_id, $following_id) {
+        $sql = "INSERT IGNORE INTO follows (follower_id, following_id) VALUES (:follower_id, :following_id)";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([':follower_id' => $follower_id, ':following_id' => $following_id]);
+    }
+
+    public function unfollow($follower_id, $following_id) {
+        $sql = "DELETE FROM follows WHERE follower_id = :follower_id AND following_id = :following_id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([':follower_id' => $follower_id, ':following_id' => $following_id]);
+    }
+
+    public function getFollowerCount($user_id) {
+        $sql = "SELECT COUNT(*) as total FROM follows WHERE following_id = :user_id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':user_id' => $user_id]);
+        return $stmt->fetch()['total'];
     }
 }

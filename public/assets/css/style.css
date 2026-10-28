@@ -619,3 +619,202 @@ footer small {
     background: linear-gradient(180deg, var(--c-5), var(--c-6));
 }
 
+/* =========================================================
+   SHOP ASIDE & SELL FORM (Merged and cleaned up)
+   ========================================================= */
+.shop-card {
+    background: var(--glass-bg);
+    border: 1px solid rgba(142, 182, 155, 0.15);
+    border-radius: 24px;
+    padding: 18px;
+    color: var(--text-primary);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+}
+
+.shop-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.shop-head h3 { margin: 0; color: var(--accent); font-size: 20px; font-weight: 700; }
+.see-all { color: var(--accent); font-size: 14px; text-decoration: none; }
+.see-all:hover { color: var(--accent-hover); }
+
+.shop-grid { display: flex; gap: 12px; }
+.shop-item {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.shop-item img {
+    width: 100%;
+    aspect-ratio: 1 / 0.75;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.shop-noimg {
+    display: grid; place-items: center;
+    aspect-ratio: 1 / 0.75;
+    border-radius: 8px;
+    background: var(--glass-bg-2);
+    border: 1px solid var(--glass-chrome-2);
+    color: var(--accent); font-size: 22px;
+}
+
+.shop-empty { margin: 0; font-size: 13px; color: var(--text-muted); }
+.item-name  { font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-price { font-size: 15px; color: var(--accent); font-weight: 600; }
+
+.sell-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 22px;
+    padding: 12px;
+    border-radius: 14px;
+    background: var(--glass-bg-2);
+    border: 1px solid var(--glass-chrome-2);
+    text-decoration: none;
+    color: var(--text-primary);
+}
+.sell-box:hover { border-color: var(--accent); }
+
+.sell-icon {
+    flex-shrink: 0;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg-base);
+    display: grid; place-items: center;
+    font-size: 22px;
+}
+
+.sell-text { flex: 1; display: flex; flex-direction: column; }
+.sell-text strong { font-size: 15px; }
+.sell-text small { font-size: 12px; color: var(--text-muted); }
+.arrow { font-size: 22px; color: var(--accent); }
+
+/* Sell Form Page */
+.sell-page {
+    min-height: calc(100vh - 65px);
+    padding: 40px 16px;
+}
+
+.sell-form-card {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px;
+    background: var(--glass-bg);
+    border: 1px solid rgba(142, 182, 155, 0.15);
+    border-radius: 24px;
+    color: var(--text-primary);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+}
+
+.sell-back { color: var(--accent); text-decoration: none; font-size: 16px; }
+.sell-back:hover, .sell-cancel:hover { color: var(--accent-hover); }
+.sell-form-card h2 { margin: 10px 0 4px; color: var(--accent); font-weight: 800; font-size: 32px; }
+.sell-sub { margin: 0 0 18px; color: var(--text-muted); }
+.sell-form-card label { display: block; margin: 14px 0 6px; font-weight: 700; color: var(--text-primary); }
+
+.sell-form-card input[type="text"],
+.sell-form-card input[type="number"],
+.sell-form-card textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(142, 182, 155, 0.3);
+    border-radius: 14px;
+    background: var(--glass-bg-2);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.sell-form-card ::placeholder { color: var(--text-muted); opacity: .9; }
+.sell-form-card input:focus,
+.sell-form-card textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sell-form-card textarea { resize: vertical; }
+.sell-form-card input[type="file"] { color: var(--text-primary); }
+
+.sell-actions { display: flex; justify-content: flex-end; align-items: center; gap: 22px; margin-top: 22px; }
+.sell-cancel { color: var(--accent); text-decoration: none; }
+.sell-submit {
+    padding: 12px 28px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--accent);
+    color: var(--bg-base);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sell-submit:hover { background: var(--accent-hover); }
+.sell-alert { margin: 8px 0 4px; padding: 14px 18px; border-radius: 14px; }
+.sell-alert-ok  { background: rgba(142, 182, 155, 0.15); border: 1px solid rgba(142, 182, 155, 0.35); color: var(--accent); }
+.sell-alert-err { background: rgba(233, 20, 41, 0.12); border: 1px solid rgba(233, 20, 41, 0.3); color: var(--danger); }
+
+/* ===== MOBILE BOTTOM NAVIGATION ===== */
+.mobile-nav {
+    display: none;
+}
+@media (max-width: 991px) {
+    /* Hide sidebars on mobile/tablet */
+    .neo-sidebar-left { display: none !important; }
+    .neo-sidebar-right { display: none !important; }
+    
+    /* Make the feed take full width and height, and add bottom padding for the nav */
+    .neo-feed-center { 
+        padding: 15px !important; 
+        padding-bottom: 100px !important; 
+        width: 100% !important; 
+        min-height: calc(100vh - 80px);
+    }
+    
+    /* Make the wrapper work properly on mobile */
+    .neo-layout-wrapper {
+        height: auto !important;
+        min-height: calc(100vh - 80px);
+        width: 100% !important;
+        display: block !important;
+    }
+    
+    /* Show the bottom nav */
+    .mobile-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: var(--glass-bg-3);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid var(--glass-chrome-2);
+        justify-content: space-around;
+        padding: 10px 0;
+        z-index: 2000;
+    }
+    .mobile-nav a {
+        color: var(--text-muted);
+        font-size: 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+    .mobile-nav a.active, .mobile-nav a:hover {
+        color: var(--accent);
+        background: var(--glass-bg-2);
+    }
+}

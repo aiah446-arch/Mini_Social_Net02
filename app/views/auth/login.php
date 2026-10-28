@@ -8,14 +8,14 @@ require_once __DIR__ . '/../layouts/header.php';
         <div class="card shadow-lg" style="border: 1px solid var(--glass-chrome-1); background: var(--glass-bg-3);">
             <div class="card-body p-4 p-md-5">
 
-                <!-- Glass Logo & Welcome Text -->
-                <div class="text-center mb-4">
-                    <div class="logo-circle mx-auto mb-3">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-                    <h3 class="mb-1 fw-bold" style="color: var(--text-primary);">Welcome Back</h3>
-                    <p class="text-muted small mb-0">Sign in to continue to NEO</p>
-                </div>
+               <!--  Logo & Welcome Text -->
+<div class="text-center mb-4">
+    <div class="d-flex justify-content-center mb-3">
+        <img src="assets/uploads/neo_logo.png" alt="NEO Logo" style="width: 120px; height: 120px; object-fit: contain; filter: drop-shadow(0 0 25px rgba(142, 182, 155, 0.4));">
+    </div>
+    <h3 class="mb-1 fw-bold" style="color: var(--text-primary);">Connect. Share. Shop</h3>
+    <p class="text-muted small mb-0">Sign in to continue to NEO</p>
+</div>
 
                 <!-- Error Alert -->
                 <?php if (!empty($error)): ?>

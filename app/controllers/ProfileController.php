@@ -5,15 +5,18 @@
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../models/UserModel.php';
 require_once __DIR__ . '/../models/PostModel.php';
+require_once __DIR__ . '/../models/NotificationModel.php';
 
 class ProfileController {
     private $userModel;
     private $postModel;
+    private $notifModel;
 
     public function __construct() {
         $db = (new Database())->getConnection();
         $this->userModel = new UserModel($db);
         $this->postModel = new PostModel($db);
+        $this->notifModel = new NotificationModel($db);
     }
 
     private function requireLogin() {
@@ -23,13 +26,9 @@ class ProfileController {
         }
     }
 
-    // -------------------------
-    // VIEW PROFILE
-    // -------------------------
     public function index() {
         $this->requireLogin();
-
-        $id = (int)($_GET['id'] ?? $_SESSION['user_id']);
+        $id = (int) ($_GET['id'] ?? $_SESSION['user_id']);
         $user = $this->userModel->findById($id);
 
         if (!$user) {
@@ -39,18 +38,23 @@ class ProfileController {
 
         $posts = $this->postModel->getByUser($id);
         $isOwnProfile = ($id == $_SESSION['user_id']);
-        $pageTitle = htmlspecialchars($user['full_name']) . ' - Mini Social';
+        
+        $followerCount = $this->userModel->getFollowerCount($id);
+        $isFollowing = !$isOwnProfile ? $this->userModel->isFollowing($_SESSION['user_id'], $id) : false;
 
+        $pageTitle = htmlspecialchars($user['full_name']) . ' - Mini Social';
         require __DIR__ . '/../views/profile/index.php';
     }
 
-    // -------------------------
-    // EDIT PROFILE
-    // -------------------------
     public function edit() {
         $this->requireLogin();
-
         $user = $this->userModel->findById($_SESSION['user_id']);
+
+        if (!$user) {
+            header('Location: index.php?page=feed');
+            exit;
+        }
+
         $errors = [];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -66,20 +70,21 @@ class ProfileController {
                 $errors[] = 'Bio is too long (max 500 characters).';
             }
 
-            // Handle image upload (optional)
             if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
                 $file = $_FILES['profile_image'];
                 $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-                $maxSize = 2 * 1024 * 1024; // 2MB
+                $maxSize = 2 * 1024 * 1024;
 
-                if (!in_array($file['type'], $allowed)) {
-                    $errors[] = 'Only JPG, PNG, GIF, or WEBP images allowed.';
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->file($file['tmp_name']);
+
+                if (!in_array($mimeType, $allowed, true)) {
+                    $errors[] = 'Only JPG, PNG, GIF, or WEBP images are allowed.';
                 } elseif ($file['size'] > $maxSize) {
                     $errors[] = 'Image must be under 2MB.';
                 } else {
-                    // Generate safe filename
-                    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                    $filename = 'user_' . $_SESSION['user_id'] . '_' . time() . '.' . strtolower($ext);
+                    $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
+                    $filename = 'user_' . (int) $_SESSION['user_id'] . '_' . time() . '.' . $extensions[$mimeType];
                     $uploadPath = __DIR__ . '/../../public/assets/uploads/' . $filename;
 
                     if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
@@ -88,21 +93,57 @@ class ProfileController {
                         $errors[] = 'Failed to upload image.';
                     }
                 }
+            } elseif (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] !== UPLOAD_ERR_NO_FILE && $_FILES['profile_image']['error'] !== UPLOAD_ERR_OK) {
+                $errors[] = 'There was a problem uploading the image.';
+            }
+
+            if ($profile_image === null && isset($_POST['remove_profile_image']) && $_POST['remove_profile_image'] === '1') {
+                $profile_image = '';
             }
 
             if (empty($errors)) {
-                if ($this->userModel->update($_SESSION['user_id'], $full_name, $bio, $profile_image)) {
-                    // Update session name too
+                $updated = $this->userModel->update($_SESSION['user_id'], $full_name, $bio, $profile_image);
+
+                if ($updated) {
                     $_SESSION['full_name'] = $full_name;
-                    header('Location: index.php?page=profile&id=' . $_SESSION['user_id']);
+                    header('Location: index.php?page=profile&id=' . (int) $_SESSION['user_id']);
                     exit;
-                } else {
-                    $errors[] = 'Failed to update profile.';
                 }
+                $errors[] = 'Failed to update profile.';
             }
+
+            $user['full_name'] = $full_name;
+            $user['bio'] = $bio;
         }
 
         $pageTitle = 'Edit Profile - Mini Social';
         require __DIR__ . '/../views/profile/edit.php';
+    }
+
+    public function followAction() {
+        $this->requireLogin();
+        $target_id = (int)($_GET['id'] ?? 0);
+        $my_id = $_SESSION['user_id'];
+        $action = 'error';
+
+        if ($target_id > 0 && $target_id !== $my_id) {
+            if ($this->userModel->isFollowing($my_id, $target_id)) {
+                $this->userModel->unfollow($my_id, $target_id);
+                $action = 'unfollowed';
+            } else {
+                $this->userModel->follow($my_id, $target_id);
+                $action = 'followed';
+                $this->notifModel->create($target_id, $my_id, 'follow', null);
+            }
+        }   
+        
+        if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => $action]);
+            exit;
+        }
+        
+        header("Location: index.php?page=profile&id=" . $target_id);
+        exit;
     }
 }

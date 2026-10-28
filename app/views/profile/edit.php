@@ -19,16 +19,12 @@
                 <form method="POST" action="index.php?page=profile.edit" enctype="multipart/form-data">
 
                     <div class="mb-3 text-center">
-                        <img src="assets/uploads/<?= htmlspecialchars($user['profile_image'] ?: 'default.png') ?>"
+                        <img src="assets/uploads/<?= htmlspecialchars($user['profile_image'] ?: '') ?>"
                              alt="Profile"
                              class="rounded-circle mb-2"
                              style="width: 100px; height: 100px; object-fit: cover; background: #1877f2;"
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
 
-                        <div class="rounded-circle bg-primary text-white mx-auto mb-2 align-items-center justify-content-center"
-                             style="width: 100px; height: 100px; font-size: 2.5rem; display: none;">
-                            <?= strtoupper(substr($user['full_name'], 0, 1)) ?>
-                        </div>
                     </div>
 
                     <div class="mb-3">

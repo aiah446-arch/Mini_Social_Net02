@@ -1,15 +1,118 @@
-<?php require_once __DIR__ . '/../layouts/header.php'; $e=static fn($v)=>htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); ?>
-<style>
-.market-wrap{max-width:1250px;margin:30px auto;padding:0 22px;color:var(--text-primary)}.market-hero{padding:30px;border:1px solid var(--glass-chrome-2);border-radius:24px;background:linear-gradient(135deg,rgba(134,239,172,.18),rgba(167,243,208,.06));margin-bottom:24px}.market-hero h2{font-weight:800;font-size:clamp(26px,4vw,38px)}.market-muted{color:var(--text-muted)}.market-search{display:flex;gap:10px;flex-wrap:wrap}.market-search input{flex:1;min-width:180px}.market-input{background:var(--glass-bg-2);border:1px solid var(--border-color);color:var(--text-primary);border-radius:12px;padding:11px 14px;width:100%}.market-btn{border:0;border-radius:12px;background:var(--accent);color:#073b25;padding:11px 17px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:18px}.market-card{overflow:hidden;border:1px solid var(--glass-chrome-2);border-radius:18px;background:var(--glass-bg-2);display:flex;flex-direction:column}.market-photo{height:205px;background:rgba(134,239,172,.08);display:flex;align-items:center;justify-content:center;overflow:hidden}.market-photo img{width:100%;height:100%;object-fit:cover}.market-body{padding:16px;display:flex;flex-direction:column;gap:9px;flex:1}.market-price{font-size:22px;font-weight:800;color:var(--accent)}.market-pill{font-size:11px;padding:5px 9px;border-radius:99px;background:rgba(134,239,172,.13);width:max-content}.market-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}.market-actions a,.market-actions button{font-size:13px;padding:7px 10px;border-radius:9px}.market-empty{text-align:center;padding:55px 15px;border:1px dashed var(--border-color);border-radius:18px}.market-notice{padding:12px 16px;border-radius:12px;background:rgba(134,239,172,.12);margin-bottom:15px}
-</style>
-<div class="market-wrap">
- <section class="market-hero"><div class="d-flex flex-wrap align-items-center justify-content-between gap-3"><div><div class="market-pill mb-3"><i class="bi bi-stars"></i> NEO CAMPUS MARKETPLACE</div><h2>Good finds, right on campus. 🌿</h2><p class="market-muted mb-0">Buy, sell, and pass useful things along to your campus community.</p></div><a class="market-btn" href="index.php?page=marketplace.create"><i class="bi bi-plus-lg"></i> Sell an item</a></div></section>
- <?php if(isset($_GET['posted'])): ?><div class="market-notice">🎉 Your listing has been posted!</div><?php endif; ?><?php if(isset($_GET['updated'])): ?><div class="market-notice">Your listing has been updated.</div><?php endif; ?><?php if(isset($_GET['deleted'])): ?><div class="market-notice">Your listing has been deleted.</div><?php endif; ?>
- <form class="market-search mb-4" method="get"><input type="hidden" name="page" value="marketplace"><input class="market-input" name="q" value="<?= $e($search) ?>" placeholder="Search books, gadgets, crafts..."><button class="market-btn" type="submit"><i class="bi bi-search"></i> Search</button><?php if($search!==''): ?><a class="market-btn" style="background:var(--glass-bg-2);color:var(--text-primary)" href="index.php?page=marketplace">Clear</a><?php endif; ?></form>
- <?php if(!$products): ?><div class="market-empty"><div style="font-size:42px">🛍️</div><h4 class="mt-3">No listings found yet</h4><p class="market-muted">Try another search, or be the first to list something for your campus.</p><a class="market-btn" href="index.php?page=marketplace.create">Post a product</a></div><?php else: ?><div class="market-grid">
- <?php foreach($products as $p): ?><article class="market-card"><div class="market-photo"><?php if(!empty($p['image']) && is_file(__DIR__.'/../../../public/assets/uploads/marketplace/'.$p['image'])): ?><img src="assets/uploads/marketplace/<?= $e(rawurlencode($p['image'])) ?>" alt="<?= $e($p['title']) ?>"><?php else: ?><div class="text-center market-muted"><i class="bi bi-image" style="font-size:42px"></i><div>No photo</div></div><?php endif; ?></div><div class="market-body"><span class="market-pill"><?= $e($p['category']) ?> · <?= $e($p['condition_label']) ?></span><h5 class="mb-0 fw-bold"><?= $e($p['title']) ?></h5><div class="market-price">₱<?= number_format((float)$p['price'],2) ?></div><p class="market-muted mb-1" style="font-size:13px;line-height:1.5"><?= $e(mb_strimwidth($p['description'],0,105,'…')) ?></p><div class="market-muted" style="font-size:12px"><i class="bi bi-person-circle"></i> <?= $e($p['full_name'] ?: $p['username']) ?> · <?= $e(date('M j',strtotime($p['created_at']))) ?></div>
- <?php if((int)$p['user_id']===(int)$_SESSION['user_id']): ?><div class="market-actions"><a class="market-btn" href="index.php?page=marketplace.edit&id=<?= (int)$p['id'] ?>"><i class="bi bi-pencil"></i> Edit</a><form method="post" action="index.php?page=marketplace.delete" onsubmit="return confirm('Delete this listing?');"><input type="hidden" name="csrf_token" value="<?= $e($_SESSION['csrf_token']) ?>"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>"><button class="market-btn" style="background:rgba(248,113,113,.15);color:#ef4444" type="submit"><i class="bi bi-trash"></i> Delete</button></form></div><?php endif; ?></div></article><?php endforeach; ?>
- </div><?php endif; ?>
- <p class="market-muted text-center mt-4" style="font-size:12px">Tip: arrange payment and pickup directly with the seller, and meet in a safe public campus location.</p>
+<?php require_once __DIR__ . '/../layouts/header.php'; ?>
+
+<div class="row justify-content-center pt-4">
+    <div class="col-lg-10">
+        
+        <!-- Header & Search -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0" style="color: var(--text-primary);">Marketplace</h2>
+            <a href="index.php?page=marketplace.create" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Sell Item
+            </a>
+        </div>
+
+        <div class="d-flex gap-2 mb-4">
+            <input type="text" class="form-control" placeholder="Search items..." style="background: var(--glass-bg-2); border: 1px solid var(--glass-chrome-2);">
+            <button class="btn btn-outline-secondary px-4">All</button>
+        </div>
+
+        <!-- Marketplace Grid -->
+        <div class="row g-4">
+            <?php if (empty($items)): ?>
+                <div class="col-12 text-center py-5">
+                    <div class="empty-state-icon mx-auto mb-3"><i class="bi bi-shop"></i></div>
+                    <h5 class="text-white">No items yet</h5>
+                    <p class="text-muted">Be the first to sell something!</p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($items as $item): ?>
+                    <div class="col-md-6 col-lg-4">
+                        
+                        <!-- The Card (Link) -->
+                        <a href="index.php?page=marketplace.view&id=<?= $item['id'] ?>" class="text-decoration-none">
+                            
+                            <div class="card h-100 shadow-sm" style="background: var(--glass-bg); border: 1px solid var(--glass-chrome-1); border-radius: 16px; overflow: hidden; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                
+                                <!-- Item Image -->
+                                <div style="height: 180px; background: var(--bg-base); position: relative;">
+                                    <?php if (!empty($item['image'])): ?>
+                                        <img src="assets/uploads/<?= htmlspecialchars($item['image']) ?>" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <!-- Bookmark Button (Styled as a clickable div so it doesn't trigger the link) -->
+                                                                       <!-- Bookmark Button -->
+                                    <?php $isSaved = in_array($item['id'], $savedIds); ?>
+                                    <div class="btn btn-sm btn-dark position-absolute save-btn" 
+                                         data-id="<?= $item['id'] ?>" 
+                                         style="top: 10px; right: 10px; border-radius: 50%; width: 32px; height: 32px; padding: 0; opacity: 0.8; z-index: 10; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                        
+                                        <!-- Check if it's saved, show green filled, else white empty -->
+                                        <i class="bi <?= $isSaved ? 'bi-bookmark-fill' : 'bi-bookmark' ?>" 
+                                           style="color: <?= $isSaved ? '#10B981' : '#fff' ?>;"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Item Details -->
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="fw-bold mb-1 text-white"><?= htmlspecialchars($item['item_name']) ?></h5>
+                                    <h4 class="mb-2" style="color: var(--accent);">₱<?= number_format($item['price'], 2) ?></h4>
+                                    <p class="text-muted small mb-3 text-truncate"><?= htmlspecialchars($item['description']) ?></p>
+                                    
+                                    <div class="d-flex align-items-center gap-2 mt-auto">
+                                        <?php if (!empty($item['profile_image']) && $item['profile_image'] !== 'default.png'): ?>
+                                            <img src="assets/uploads/<?= htmlspecialchars($item['profile_image']) ?>" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                                        <?php else: ?>
+                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 0.7rem;">
+                                                <?= strtoupper(substr($item['full_name'], 0, 1)) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <small class="text-muted"><?= htmlspecialchars($item['full_name']) ?> · <?= date('M j', strtotime($item['created_at'])) ?></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
+
+<!-- AJAX Script for Saving Items -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.save-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            // THIS IS THE MAGIC FIX: Stop the link from opening!
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            
+            const itemId = this.getAttribute('data-id');
+            const icon = this.querySelector('i');
+            
+            // Send request to save/unsave
+            fetch('index.php?page=marketplace.save&id=' + itemId)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'saved') {
+                        icon.classList.remove('bi-bookmark');
+                        icon.classList.add('bi-bookmark-fill');
+                        icon.style.color = '#10B981'; // Glowing Green
+                    } else if (data.status === 'unsaved') {
+                        icon.classList.remove('bi-bookmark-fill');
+                        icon.classList.add('bi-bookmark');
+                        icon.style.color = '#fff'; // White
+                    }
+                })
+                .catch(err => console.error('Error saving item:', err));
+        });
+    });
+});
+</script>
+
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

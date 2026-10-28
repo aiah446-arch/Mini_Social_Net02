@@ -10,15 +10,16 @@ class CommentModel {
         $this->conn = $db;
     }
 
-    // Get all comments for a specific post
-    public function getByPost($post_id) {
+    // Get all comments for a specific post or marketplace item
+    public function getByPost($post_id, $type = 'post') {
         $sql = "SELECT c.*, u.username, u.full_name, u.profile_image
                 FROM {$this->table} c
                 JOIN users u ON c.user_id = u.id
-                WHERE c.post_id = :post_id
+                WHERE c.post_id = :post_id AND c.item_type = :type
                 ORDER BY c.created_at ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':post_id', $post_id, PDO::PARAM_INT);
+        $stmt->bindParam(':type', $type);
         $stmt->execute();
         return $stmt->fetchAll();
     }
@@ -33,13 +34,14 @@ class CommentModel {
     }
 
     // Create a comment
-    public function create($post_id, $user_id, $content) {
-        $sql = "INSERT INTO {$this->table} (post_id, user_id, content)
-                VALUES (:post_id, :user_id, :content)";
+    public function create($post_id, $user_id, $content, $type = 'post') {
+        $sql = "INSERT INTO {$this->table} (post_id, user_id, content, item_type)
+                VALUES (:post_id, :user_id, :content, :type)";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':post_id', $post_id, PDO::PARAM_INT);
         $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
         $stmt->bindParam(':content', $content);
+        $stmt->bindParam(':type', $type);
         return $stmt->execute();
     }
 
@@ -61,10 +63,11 @@ class CommentModel {
     }
 
     // Count comments per post
-    public function countByPost($post_id) {
-        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE post_id = :post_id";
+    public function countByPost($post_id, $type = 'post') {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE post_id = :post_id AND item_type = :type";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':post_id', $post_id, PDO::PARAM_INT);
+        $stmt->bindParam(':type', $type);
         $stmt->execute();
         $row = $stmt->fetch();
         return $row['total'];
