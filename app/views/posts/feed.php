@@ -252,7 +252,7 @@ $unreadCount = $notifModel->countUnread($_SESSION['user_id']);
                 <a class="more-item" href="index.php?page=profile.edit"><i class="bi bi-gear"></i><span>Settings</span></a>
                 <a class="more-item" href="index.php?page=notifications"><i class="bi bi-activity"></i><span>Your activity</span></a>
                 <a class="more-item" href="index.php?page=marketplace.saved"><i class="bi bi-bookmark"></i><span>Saved</span></a>
-                <button type="button" class="more-item" id="themeToggleBtn"><i class="bi bi-moon"></i><span>Switch appearance</span></button>
+                <button type="button" class="more-item" id="themeToggleBtn" role="switch"><i class="bi bi-moon"></i><span>Switch appearance</span><span class="tg" aria-hidden="true"></span></button>
                 <a class="more-item" href="mailto:YOUR_EMAIL@example.com?subject=NEO%20-%20Report%20a%20problem"><i class="bi bi-exclamation-square"></i><span>Report a problem</span></a>
                 <div class="more-divider"></div>
                 <a class="more-item plain" href="index.php?page=logout">Log out</a>
@@ -542,7 +542,7 @@ $unreadCount = $notifModel->countUnread($_SESSION['user_id']);
     <div class="more-divider"></div>
 
     <a class="more-item" href="index.php?page=profile.edit"><i class="bi bi-gear"></i><span>Settings</span></a>
-    <button type="button" class="more-item" id="mobileThemeBtn"><i class="bi bi-moon"></i><span>Switch appearance</span></button>
+    <button type="button" class="more-item" id="mobileThemeBtn" role="switch"><i class="bi bi-moon"></i><span>Switch appearance</span><span class="tg" aria-hidden="true"></span></button>
     <a class="more-item" href="mailto:YOUR_EMAIL@example.com?subject=NEO%20-%20Report%20a%20problem"><i class="bi bi-exclamation-square"></i><span>Report a problem</span></a>
 
     <div class="more-divider"></div>

@@ -818,3 +818,35 @@ footer small {
         background: var(--glass-bg-2);
     }
 }
+
+/* =========================================================
+   "SWITCH APPEARANCE" ROUND SLIDER TOGGLE (inside the More menus)
+   Add <span class="tg" aria-hidden="true"></span> after the label of the button.
+   Knob RIGHT + green track = dark mode, knob LEFT + gray track = light mode.
+   ========================================================= */
+.more-item .tg {
+    position: relative;
+    flex-shrink: 0;
+    margin-left: auto;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    background: #9aa5a0;                          /* OFF = light mode */
+    transition: background-color 0.25s ease;
+}
+
+.more-item .tg::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transition: transform 0.25s ease;
+}
+
+[data-theme="dark"] .more-item .tg { background: var(--accent); }          /* ON = dark mode */
+[data-theme="dark"] .more-item .tg::after { transform: translateX(20px); }

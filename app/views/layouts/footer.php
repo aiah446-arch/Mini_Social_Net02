@@ -1,4 +1,4 @@
-    </div> <!-- Closes the .row from feed.php -->
+</div> <!-- Closes the .row from feed.php -->
 </main> <!-- Closes the <main class="container"> from header.php -->
 
 <footer class="text-center py-4 mt-5">
@@ -34,7 +34,7 @@
     <a class="more-item" href="index.php?page=profile.edit"><i class="bi bi-gear"></i><span>Settings</span></a>
     <a class="more-item" href="index.php?page=notifications"><i class="bi bi-activity"></i><span>Your activity</span></a>
     <a class="more-item" href="index.php?page=marketplace.saved"><i class="bi bi-bookmark"></i><span>Saved</span></a>
-    <button type="button" class="more-item" id="mobileThemeToggleBtn"><i class="bi bi-moon"></i><span>Switch appearance</span></button>
+    <button type="button" class="more-item" id="mobileThemeToggleBtn" role="switch"><i class="bi bi-moon"></i><span>Switch appearance</span><span class="tg" aria-hidden="true"></span></button>
     <a class="more-item" href="index.php?page=logout" class="text-danger"><i class="bi bi-box-arrow-right"></i><span>Log out</span></a>
 </div>
 
