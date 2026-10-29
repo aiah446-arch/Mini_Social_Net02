@@ -34,6 +34,18 @@
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">Cover Photo</label>
+                        <?php if (!empty($user['cover_image'])): ?>
+                            <img src="assets/uploads/<?= htmlspecialchars($user['cover_image']) ?>"
+                                 alt="Cover"
+                                 class="rounded mb-2 w-100"
+                                 style="height: 120px; object-fit: cover;">
+                        <?php endif; ?>
+                        <input type="file" name="cover_image" class="form-control" accept="image/*">
+                        <small class="text-muted">Max 4MB. JPG, PNG, GIF, WEBP only. Wide photos look best.</small>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label">Username</label>
                         <input type="text" class="form-control" value="<?= htmlspecialchars($user['username']) ?>" disabled>
                         <small class="text-muted">Username cannot be changed.</small>
@@ -61,6 +73,52 @@
                 </form>
             </div>
         </div>
+
+        <!-- ===== CHANGE PASSWORD ===== -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body p-4">
+                <h4 class="mb-3"><i class="bi bi-shield-lock"></i> Change Password</h4>
+
+                <?php if (!empty($pwSuccess)): ?>
+                    <div class="alert alert-success">Your password was changed successfully.</div>
+                <?php endif; ?>
+
+                <?php if (!empty($pwErrors)): ?>
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            <?php foreach ($pwErrors as $e): ?>
+                                <li><?= htmlspecialchars($e) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST" action="index.php?page=profile.edit" autocomplete="off">
+                    <input type="hidden" name="action" value="change_password">
+
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" name="current_password" class="form-control" autocomplete="current-password" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="new_password" class="form-control" minlength="8" autocomplete="new-password" required>
+                        <small class="text-muted">At least 8 characters.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" name="confirm_password" class="form-control" minlength="8" autocomplete="new-password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-key"></i> Update Password
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </div>
 </div>
 

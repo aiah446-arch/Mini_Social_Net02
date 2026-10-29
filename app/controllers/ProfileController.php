@@ -36,10 +36,13 @@ class ProfileController {
             exit;
         }
 
-        $posts = $this->postModel->getByUser($id);
+        $posts = $this->postModel->attachImages($this->postModel->getByUser($id));
         $isOwnProfile = ($id == $_SESSION['user_id']);
         
         $followerCount = $this->userModel->getFollowerCount($id);
+        $followingCount = $this->userModel->getFollowingCount($id);
+        $followersList = $this->userModel->getFollowers($id);
+        $followingList = $this->userModel->getFollowing($id);
         $isFollowing = !$isOwnProfile ? $this->userModel->isFollowing($_SESSION['user_id'], $id) : false;
 
         $pageTitle = htmlspecialchars($user['full_name']) . ' - Mini Social';
@@ -56,11 +59,44 @@ class ProfileController {
         }
 
         $errors = [];
+        $pwErrors = [];
+        $pwSuccess = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // CHANGE PASSWORD (separate form on the same page)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'change_password') {
+            $current = $_POST['current_password'] ?? '';
+            $new     = $_POST['new_password'] ?? '';
+            $confirm = $_POST['confirm_password'] ?? '';
+
+            if ($current === '' || $new === '' || $confirm === '') {
+                $pwErrors[] = 'Please fill in all password fields.';
+            } elseif (!password_verify($current, $user['password'])) {
+                $pwErrors[] = 'Your current password is incorrect.';
+            } else {
+                if (strlen($new) < 8) {
+                    $pwErrors[] = 'New password must be at least 8 characters.';
+                }
+                if ($new !== $confirm) {
+                    $pwErrors[] = 'New passwords do not match.';
+                }
+                if ($new === $current) {
+                    $pwErrors[] = 'New password must be different from your current password.';
+                }
+            }
+
+            if (empty($pwErrors)) {
+                if ($this->userModel->updatePassword($_SESSION['user_id'], password_hash($new, PASSWORD_DEFAULT))) {
+                    session_regenerate_id(true);
+                    $pwSuccess = true;
+                } else {
+                    $pwErrors[] = 'Failed to change password. Please try again.';
+                }
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $full_name = trim($_POST['full_name'] ?? '');
             $bio = trim($_POST['bio'] ?? '');
             $profile_image = null;
+            $cover_image = null;
 
             if ($full_name === '') {
                 $errors[] = 'Full name is required.';
@@ -97,12 +133,40 @@ class ProfileController {
                 $errors[] = 'There was a problem uploading the image.';
             }
 
+            // Cover photo upload (same rules as the profile picture, max 4MB)
+            if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['cover_image'];
+                $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                $maxSize = 4 * 1024 * 1024;
+
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->file($file['tmp_name']);
+
+                if (!in_array($mimeType, $allowed, true)) {
+                    $errors[] = 'Cover photo must be a JPG, PNG, GIF, or WEBP image.';
+                } elseif ($file['size'] > $maxSize) {
+                    $errors[] = 'Cover photo must be under 4MB.';
+                } else {
+                    $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
+                    $filename = 'cover_' . (int) $_SESSION['user_id'] . '_' . time() . '.' . $extensions[$mimeType];
+                    $uploadPath = __DIR__ . '/../../public/assets/uploads/' . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        $cover_image = $filename;
+                    } else {
+                        $errors[] = 'Failed to upload cover photo.';
+                    }
+                }
+            } elseif (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $errors[] = 'There was a problem uploading the cover photo.';
+            }
+
             if ($profile_image === null && isset($_POST['remove_profile_image']) && $_POST['remove_profile_image'] === '1') {
                 $profile_image = '';
             }
 
             if (empty($errors)) {
-                $updated = $this->userModel->update($_SESSION['user_id'], $full_name, $bio, $profile_image);
+                $updated = $this->userModel->update($_SESSION['user_id'], $full_name, $bio, $profile_image, $cover_image);
 
                 if ($updated) {
                     $_SESSION['full_name'] = $full_name;

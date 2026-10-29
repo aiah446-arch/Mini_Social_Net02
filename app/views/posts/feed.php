@@ -253,7 +253,6 @@ $unreadCount = $notifModel->countUnread($_SESSION['user_id']);
                 <a class="more-item" href="index.php?page=notifications"><i class="bi bi-activity"></i><span>Your activity</span></a>
                 <a class="more-item" href="index.php?page=marketplace.saved"><i class="bi bi-bookmark"></i><span>Saved</span></a>
                 <button type="button" class="more-item" id="themeToggleBtn" role="switch"><i class="bi bi-moon"></i><span>Switch appearance</span><span class="tg" aria-hidden="true"></span></button>
-                <a class="more-item" href="mailto:YOUR_EMAIL@example.com?subject=NEO%20-%20Report%20a%20problem"><i class="bi bi-exclamation-square"></i><span>Report a problem</span></a>
                 <div class="more-divider"></div>
                 <a class="more-item plain" href="index.php?page=logout">Log out</a>
             </div>
@@ -277,13 +276,10 @@ $unreadCount = $notifModel->countUnread($_SESSION['user_id']);
                         <?php endif; ?>
                         <textarea name="content" class="form-control" rows="2" placeholder="What's on your mind, <?= htmlspecialchars($_SESSION['full_name']) ?>?" style="background: var(--glass-bg-2); border: 1px solid var(--glass-chrome-2); resize: none;"></textarea>
                     </div>
-                    <div id="feedPreviewBox" class="mb-2 position-relative d-none ms-5">
-                        <img id="feedPreviewImg" src="" alt="" class="rounded-3 border" style="max-height: 120px; max-width: 200px; object-fit: cover; border-color: var(--glass-chrome-2) !important;">
-                        <button type="button" id="removePreview" class="btn btn-sm btn-danger position-absolute" style="top: -10px; right: -10px; border-radius: 50%; width: 28px; height: 28px; padding: 0; line-height: 1;" title="Remove photo"><i class="bi bi-x-lg" style="font-size: 0.7rem;"></i></button>
-                    </div>
+                    <div id="feedPreviewBox" class="flex-wrap gap-2 mb-2 ms-5" style="display: none;"></div>
                     <div class="d-flex justify-content-between align-items-center border-top pt-3" style="border-color: var(--glass-chrome-2) !important;">
                         <div class="d-flex gap-2">
-                            <input type="file" name="image" id="feedImageInput" accept="image/*" style="display: none;">
+                            <input type="file" name="images[]" id="feedImageInput" accept="image/*" multiple style="display: none;">
                             <label for="feedImageInput" class="btn btn-sm btn-outline-secondary mb-0" id="feedImageLabel" style="cursor: pointer;"><i class="bi bi-image"></i> Photo</label>
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-send"></i> Post</button>
@@ -393,17 +389,16 @@ $unreadCount = $notifModel->countUnread($_SESSION['user_id']);
                                             <p class="mb-0" style="font-size: 14px;"><?= nl2br(htmlspecialchars($originalPost['content'])) ?></p>
                                         <?php endif; ?>
                                         <?php if (!empty($originalPost['image'])): ?>
-                                            <img src="assets/uploads/<?= htmlspecialchars($originalPost['image']) ?>" class="img-fluid rounded mt-2" style="max-height: 300px; object-fit: cover;">
+                                            <img src="assets/uploads/<?= htmlspecialchars($originalPost['image']) ?>" class="img-fluid rounded mt-2 neo-zoom" style="max-height: 300px; object-fit: cover;">
                                         <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
 
-                            <?php if (!empty($post['image'])): ?>
-                                <div class="mb-3">
-                                    <img src="assets/uploads/<?= htmlspecialchars($post['image']) ?>" alt="Post image" class="img-fluid rounded w-100" style="max-height: 500px; object-fit: cover; border: 1px solid var(--glass-chrome-2);">
-                                </div>
-                            <?php endif; ?>
+                            <?php
+                            $galleryImages = $post['images'] ?? (!empty($post['image']) ? [$post['image']] : []);
+                            require __DIR__ . '/_images.php';
+                            ?>
 
                             <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-2" style="border-color: var(--glass-chrome-2) !important;">
                                 <div class="d-flex align-items-center gap-2">
@@ -503,8 +498,58 @@ $unreadCount = $notifModel->countUnread($_SESSION['user_id']);
                 </ul>
             </div>
         </div>
+
+        <?php
+        // small helper for the avatars in the sidebar lists
+        function neo_side_avatar($p) {
+            if (!empty($p['profile_image']) && $p['profile_image'] !== 'default.png') {
+                return '<img src="assets/uploads/' . htmlspecialchars($p['profile_image']) . '" alt="" class="rounded-circle" style="width: 38px; height: 38px; object-fit: cover; border: 2px solid var(--accent);">';
+            }
+            return '<div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; font-size: 1rem; border: 2px solid var(--accent);">' . htmlspecialchars(strtoupper(substr($p['full_name'], 0, 1))) . '</div>';
+        }
+        ?>
+
+        <!-- Suggested follows -->
+        <?php if (!empty($suggestions)): ?>
+        <div class="card shadow-sm mb-4" style="border: 1px solid var(--glass-chrome-1); background: transparent;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3 text-uppercase" style="color: var(--accent); font-size: 12px; letter-spacing: 1px;">Suggested for you</h6>
+                <?php foreach ($suggestions as $sg): ?>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <a href="index.php?page=profile&id=<?= (int)$sg['id'] ?>" class="flex-shrink-0"><?= neo_side_avatar($sg) ?></a>
+                        <div class="flex-grow-1" style="min-width: 0;">
+                            <a href="index.php?page=profile&id=<?= (int)$sg['id'] ?>" class="d-block text-decoration-none fw-semibold text-truncate" style="color: var(--text-primary); font-size: 14px;"><?= htmlspecialchars($sg['full_name']) ?></a>
+                            <small class="d-block text-muted text-truncate">@<?= htmlspecialchars($sg['username']) ?></small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary follow-btn-feed user-<?= (int)$sg['id'] ?>" data-userid="<?= (int)$sg['id'] ?>" style="border-radius: 20px; font-weight: 600; font-size: 12px; padding: 3px 12px; white-space: nowrap; flex-shrink: 0;">Follow</button>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Contacts (people you chatted with) -->
+        <?php if (!empty($contacts)): ?>
+        <div class="card shadow-sm mb-4" style="border: 1px solid var(--glass-chrome-1); background: transparent;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3 text-uppercase" style="color: var(--accent); font-size: 12px; letter-spacing: 1px;">Contacts</h6>
+                <?php foreach ($contacts as $ct): ?>
+                    <a href="index.php?page=chats&with=<?= (int)$ct['id'] ?>" class="d-flex align-items-center gap-2 mb-3 text-decoration-none">
+                        <span class="flex-shrink-0"><?= neo_side_avatar($ct) ?></span>
+                        <span class="flex-grow-1" style="min-width: 0;">
+                            <span class="d-block fw-semibold text-truncate" style="color: var(--text-primary); font-size: 14px;"><?= htmlspecialchars($ct['full_name']) ?></span>
+                            <small class="d-block text-muted text-truncate">@<?= htmlspecialchars($ct['username']) ?></small>
+                        </span>
+                        <i class="bi bi-chat-dots text-muted"></i>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
+
+<?php require __DIR__ . '/_lightbox.php'; ?>
 
 <!-- MOBILE: bottom navigation + slide-up menu (shown under 992px only) -->
 <nav class="neo-bottom-nav" aria-label="Main navigation">
@@ -543,7 +588,6 @@ $unreadCount = $notifModel->countUnread($_SESSION['user_id']);
 
     <a class="more-item" href="index.php?page=profile.edit"><i class="bi bi-gear"></i><span>Settings</span></a>
     <button type="button" class="more-item" id="mobileThemeBtn" role="switch"><i class="bi bi-moon"></i><span>Switch appearance</span><span class="tg" aria-hidden="true"></span></button>
-    <a class="more-item" href="mailto:YOUR_EMAIL@example.com?subject=NEO%20-%20Report%20a%20problem"><i class="bi bi-exclamation-square"></i><span>Report a problem</span></a>
 
     <div class="more-divider"></div>
     <a class="more-item plain" href="index.php?page=logout">Log out</a>
@@ -552,39 +596,53 @@ $unreadCount = $notifModel->countUnread($_SESSION['user_id']);
 <!-- ALL JAVASCRIPT LOGIC FOR THE FEED (SINGLE SCRIPT BLOCK) -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // --- 1. Image Preview Logic ---
+    // --- 1. Multiple photo picker with previews ---
     var input = document.getElementById('feedImageInput');
     var previewBox = document.getElementById('feedPreviewBox');
-    var previewImg = document.getElementById('feedPreviewImg');
     var label = document.getElementById('feedImageLabel');
-    var removeBtn = document.getElementById('removePreview');
-    if (input) {
-        input.addEventListener('change', function(e) {
-            var file = e.target.files[0];
-            if (file) {
-                var reader = new FileReader();
-                reader.onload = function(ev) {
-                    previewImg.src = ev.target.result;
-                    previewBox.classList.remove('d-none');
-                    previewBox.classList.add('d-inline-block');
-                    label.innerHTML = '<i class="bi bi-check-circle"></i> Photo ready';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                previewImg.src = '';
-                previewBox.classList.add('d-none');
-                previewBox.classList.remove('d-inline-block');
-                label.innerHTML = '<i class="bi bi-image"></i> Photo';
-            }
+    var MAX_PHOTOS = 10;
+    var picked = (window.DataTransfer ? new DataTransfer() : null);
+
+    function renderPreviews() {
+        previewBox.innerHTML = '';
+        var files = Array.from(picked.files);
+        files.forEach(function (file, i) {
+            var wrap = document.createElement('div');
+            wrap.className = 'position-relative';
+            var im = document.createElement('img');
+            im.src = URL.createObjectURL(file);
+            im.alt = '';
+            im.className = 'rounded-3 border';
+            im.style.cssText = 'width: 100px; height: 100px; object-fit: cover; border-color: var(--glass-chrome-2) !important;';
+            var rm = document.createElement('button');
+            rm.type = 'button';
+            rm.title = 'Remove photo';
+            rm.className = 'btn btn-sm btn-danger position-absolute';
+            rm.style.cssText = 'top: -8px; right: -8px; border-radius: 50%; width: 24px; height: 24px; padding: 0; line-height: 1;';
+            rm.innerHTML = '<i class="bi bi-x-lg" style="font-size: 0.6rem;"></i>';
+            rm.addEventListener('click', function () {
+                var next = new DataTransfer();
+                files.forEach(function (f, j) { if (j !== i) next.items.add(f); });
+                picked = next;
+                input.files = picked.files;
+                renderPreviews();
+            });
+            wrap.appendChild(im);
+            wrap.appendChild(rm);
+            previewBox.appendChild(wrap);
         });
+        var n = files.length;
+        previewBox.style.display = n ? 'flex' : 'none';
+        label.innerHTML = n ? '<i class="bi bi-images"></i> ' + n + ' photo' + (n > 1 ? 's' : '') + ' (add more)' : '<i class="bi bi-image"></i> Photo';
     }
-    if(removeBtn) {
-        removeBtn.addEventListener('click', function() {
-            input.value = '';
-            previewImg.src = '';
-            previewBox.classList.add('d-none');
-            previewBox.classList.remove('d-inline-block');
-            label.innerHTML = '<i class="bi bi-image"></i> Photo';
+
+    if (input && previewBox && picked) {
+        input.addEventListener('change', function () {
+            Array.from(input.files).forEach(function (f) {
+                if (picked.files.length < MAX_PHOTOS && f.type.indexOf('image/') === 0) picked.items.add(f);
+            });
+            input.files = picked.files;
+            renderPreviews();
         });
     }
 

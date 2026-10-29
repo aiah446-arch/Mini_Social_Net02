@@ -52,10 +52,74 @@ class PostController {
         return ['filename' => null, 'error' => 'Failed to upload image.'];
     }
 
+    // Upload many photos at once (input name="images[]"; the old single "image" still works)
+    private function handleMultiUpload($max = 10) {
+        $entries = [];
+        foreach (['images', 'image'] as $key) {
+            if (!isset($_FILES[$key])) continue;
+            $f = $_FILES[$key];
+            if (is_array($f['name'])) {
+                foreach ($f['name'] as $i => $name) {
+                    $entries[] = ['tmp_name' => $f['tmp_name'][$i], 'error' => $f['error'][$i], 'size' => $f['size'][$i]];
+                }
+            } else {
+                $entries[] = ['tmp_name' => $f['tmp_name'], 'error' => $f['error'], 'size' => $f['size']];
+            }
+        }
+
+        $entries = array_values(array_filter($entries, function ($e) { return $e['error'] !== UPLOAD_ERR_NO_FILE; }));
+        if (empty($entries)) {
+            return ['files' => [], 'error' => null];
+        }
+        if (count($entries) > $max) {
+            return ['files' => [], 'error' => "You can add up to $max photos per post."];
+        }
+
+        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
+        $maxSize = 3 * 1024 * 1024;
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $saved = [];
+
+        foreach ($entries as $n => $e) {
+            $error = null;
+            if ($e['error'] !== UPLOAD_ERR_OK) {
+                $error = 'A photo could not be uploaded (it may be too large).';
+            } else {
+                $mime = $finfo->file($e['tmp_name']);
+                if (!isset($allowed[$mime])) {
+                    $error = 'Only JPG, PNG, GIF, or WEBP images allowed.';
+                } elseif ($e['size'] > $maxSize) {
+                    $error = 'Each photo must be under 3MB.';
+                }
+            }
+
+            if ($error === null) {
+                $filename = 'post_' . $_SESSION['user_id'] . '_' . time() . '_' . $n . rand(100, 999) . '.' . $allowed[$mime];
+                if (move_uploaded_file($e['tmp_name'], __DIR__ . '/../../public/assets/uploads/' . $filename)) {
+                    $saved[] = $filename;
+                    continue;
+                }
+                $error = 'Failed to upload image.';
+            }
+
+            // something failed: remove the photos that were already saved
+            foreach ($saved as $file) {
+                @unlink(__DIR__ . '/../../public/assets/uploads/' . $file);
+            }
+            return ['files' => [], 'error' => $error];
+        }
+
+        return ['files' => $saved, 'error' => null];
+    }
+
     public function feed() {
         $this->requireLogin();
-        $posts = $this->postModel->getAll();
+        $posts = $this->postModel->attachImages($this->postModel->getAll());
         $currentUser = $this->userModel->findById($_SESSION['user_id']);
+
+        // Right sidebar: suggested follows + contacts (people you chatted with)
+        $suggestions = $this->userModel->getSuggestions($_SESSION['user_id'], 5);
+        $contacts = $this->userModel->getContacts($_SESSION['user_id'], 5);
         
         $unreadMsgs = $this->messageModel->countUnreadMessages($_SESSION['user_id']);
 
@@ -71,27 +135,33 @@ class PostController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $content = trim($_POST['content'] ?? '');
-            $image = null;
 
-            if ($content === '') {
-                $error = 'Post content cannot be empty.';
-            } elseif (strlen($content) > 1000) {
+            if (strlen($content) > 1000) {
                 $error = 'Post is too long (max 1000 characters).';
             } else {
-                $upload = $this->handleUpload('image');
+                $upload = $this->handleMultiUpload(10);
+                $files = $upload['files'];
+
                 if ($upload['error']) {
                     $error = $upload['error'];
+                } elseif ($content === '' && empty($files)) {
+                    $error = 'Write something or add a photo.';
                 } else {
-                    $image = $upload['filename'];
-                }
+                    // 1st photo goes in posts.image, the others in post_images
+                    $image = !empty($files) ? $files[0] : null;
 
-                if (empty($error)) {
                     if ($this->postModel->create($_SESSION['user_id'], $content, $image)) {
+                        if (count($files) > 1) {
+                            $this->postModel->addImages($this->postModel->lastInsertId(), array_slice($files, 1));
+                        }
                         header('Location: index.php?page=feed');
                         exit;
-                    } else {
-                        $error = 'Failed to create post. Please try again.';
                     }
+
+                    foreach ($files as $file) {
+                        @unlink(__DIR__ . '/../../public/assets/uploads/' . $file);
+                    }
+                    $error = 'Failed to create post. Please try again.';
                 }
             }
         }
@@ -164,6 +234,13 @@ class PostController {
                     unlink($imgPath);
                 }
             }
+            foreach ($this->postModel->getExtraImages($id) as $extraImg) {
+                $extraPath = __DIR__ . '/../../public/assets/uploads/' . $extraImg;
+                if (file_exists($extraPath)) {
+                    unlink($extraPath);
+                }
+            }
+            $this->postModel->deleteExtraImages($id);
             $this->postModel->delete($id);
         }
 

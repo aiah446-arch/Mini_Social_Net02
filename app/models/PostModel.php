@@ -91,6 +91,75 @@ class PostModel {
         return $stmt->execute();
     }
 
+    // ID of the row that was just inserted (used to attach extra photos)
+    public function lastInsertId() {
+        return (int)$this->conn->lastInsertId();
+    }
+
+    // Extra photos of a post (the 2nd, 3rd... photo). The 1st photo stays in posts.image
+    public function addImages($post_id, array $files) {
+        $sql = "INSERT INTO post_images (post_id, image, position) VALUES (:post_id, :image, :position)";
+        $stmt = $this->conn->prepare($sql);
+        $pos = 1;
+        foreach ($files as $file) {
+            $stmt->execute([':post_id' => $post_id, ':image' => $file, ':position' => $pos++]);
+        }
+        return true;
+    }
+
+    public function getExtraImages($post_id) {
+        try {
+            $stmt = $this->conn->prepare("SELECT image FROM post_images WHERE post_id = :id ORDER BY position, id");
+            $stmt->execute([':id' => $post_id]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (PDOException $e) {
+            return [];
+        }
+    }
+
+    public function deleteExtraImages($post_id) {
+        try {
+            $stmt = $this->conn->prepare("DELETE FROM post_images WHERE post_id = :id");
+            return $stmt->execute([':id' => $post_id]);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    // Adds $row['images'] (list of all photo file names) to every post row.
+    // Works for the feed (posts + marketplace rows) and for profile posts.
+    public function attachImages(array $rows) {
+        $ids = [];
+        foreach ($rows as $r) {
+            if (($r['type'] ?? 'post') !== 'marketplace') { $ids[] = (int)$r['id']; }
+        }
+
+        $extra = [];
+        if (!empty($ids)) {
+            try {
+                $in = implode(',', array_fill(0, count($ids), '?'));
+                $stmt = $this->conn->prepare("SELECT post_id, image FROM post_images WHERE post_id IN ($in) ORDER BY position, id");
+                $stmt->execute($ids);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $img) {
+                    $extra[$img['post_id']][] = $img['image'];
+                }
+            } catch (PDOException $e) {
+                $extra = []; // post_images table not created yet: just show the 1st photo
+            }
+        }
+
+        foreach ($rows as &$r) {
+            $imgs = [];
+            if (!empty($r['image'])) { $imgs[] = $r['image']; }
+            if (($r['type'] ?? 'post') !== 'marketplace' && isset($extra[$r['id']])) {
+                $imgs = array_merge($imgs, $extra[$r['id']]);
+            }
+            $r['images'] = $imgs;
+        }
+        unset($r);
+        return $rows;
+    }
+
     public function update($id, $content, $image = null) {
         if ($image !== null) {
             $sql = "UPDATE {$this->table} SET content = :content, image = :image WHERE id = :id";
