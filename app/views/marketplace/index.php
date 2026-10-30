@@ -11,18 +11,25 @@
             </a>
         </div>
 
-        <div class="d-flex gap-2 mb-4">
-            <input type="text" class="form-control" placeholder="Search items..." style="background: var(--glass-bg-2); border: 1px solid var(--glass-chrome-2);">
-            <button class="btn btn-outline-secondary px-4">All</button>
-        </div>
+        <form method="GET" action="index.php" class="d-flex gap-2 mb-4">
+            <input type="hidden" name="page" value="marketplace">
+            <input type="text" name="search" class="form-control" placeholder="Search items..." value="<?= htmlspecialchars($search ?? '') ?>" style="background: var(--glass-bg-2); border: 1px solid var(--glass-chrome-2); color: var(--text-primary);">
+            <button type="submit" class="btn btn-primary px-4" title="Search"><i class="bi bi-search"></i></button>
+            <a href="index.php?page=marketplace" class="btn btn-outline-secondary px-4">All</a>
+        </form>
 
         <!-- Marketplace Grid -->
         <div class="row g-4">
             <?php if (empty($items)): ?>
                 <div class="col-12 text-center py-5">
                     <div class="empty-state-icon mx-auto mb-3"><i class="bi bi-shop"></i></div>
-                    <h5 class="text-white">No items yet</h5>
-                    <p class="text-muted">Be the first to sell something!</p>
+                    <?php if (!empty($search)): ?>
+                        <h5 style="color: var(--text-primary);">No items found</h5>
+                        <p class="text-muted">No results for "<?= htmlspecialchars($search) ?>". Try another word or click All.</p>
+                    <?php else: ?>
+                        <h5 style="color: var(--text-primary);">No items yet</h5>
+                        <p class="text-muted">Be the first to sell something!</p>
+                    <?php endif; ?>
                 </div>
             <?php else: ?>
                 <?php foreach ($items as $item): ?>
@@ -58,7 +65,7 @@
 
                                 <!-- Item Details -->
                                 <div class="card-body d-flex flex-column">
-                                    <h5 class="fw-bold mb-1 text-white"><?= htmlspecialchars($item['item_name']) ?></h5>
+                                    <h5 class="fw-bold mb-1" style="color: var(--text-primary);"><?= htmlspecialchars($item['item_name']) ?></h5>
                                     <h4 class="mb-2" style="color: var(--accent);">₱<?= number_format($item['price'], 2) ?></h4>
                                     <p class="text-muted small mb-3 text-truncate"><?= htmlspecialchars($item['description']) ?></p>
                                     
@@ -88,7 +95,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.save-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
-            // THIS IS THE MAGIC FIX: Stop the link from opening!
+            //Stops the link from opening
             e.preventDefault(); 
             e.stopPropagation(); 
             

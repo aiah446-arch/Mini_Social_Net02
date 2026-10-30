@@ -19,7 +19,8 @@ class MarketplaceController {
 
     public function index() {
         $this->requireLogin();
-        $items = $this->marketModel->getAllItems();
+        $search = trim($_GET['search'] ?? '');
+        $items = $this->marketModel->getAllItems($search);
         $savedIds = $this->marketModel->getSavedItemIds($_SESSION['user_id']);
         
         $pageTitle = 'Marketplace - NEO';

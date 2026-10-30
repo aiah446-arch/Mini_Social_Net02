@@ -7,13 +7,19 @@ class MarketplaceModel {
         $this->conn = $db;
     }
 
-    public function getAllItems() {
+    public function getAllItems($search = '') {
         $sql = "SELECT m.*, u.full_name, u.username, u.profile_image 
                 FROM {$this->table} m
-                JOIN users u ON m.user_id = u.id
-                ORDER BY m.created_at DESC";
+                JOIN users u ON m.user_id = u.id";
+        $params = [];
+        if ($search !== '') {
+            $sql .= " WHERE (m.item_name LIKE :search_name OR m.description LIKE :search_desc)";
+            $params[':search_name'] = '%' . $search . '%';
+            $params[':search_desc'] = '%' . $search . '%';
+        }
+        $sql .= " ORDER BY m.created_at DESC";
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute();
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 

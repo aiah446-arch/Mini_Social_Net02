@@ -16,7 +16,7 @@
                 <input type="text" name="search" class="form-control" 
                        placeholder="Search saved items..." 
                        value="<?= htmlspecialchars($search ?? '') ?>"
-                       style="background: var(--glass-bg-2); border: 1px solid var(--glass-chrome-2); color: white; border-right: none;">
+                       style="background: var(--glass-bg-2); border: 1px solid var(--glass-chrome-2); color: var(--text-primary); border-right: none;">
                 <button type="submit" class="btn btn-outline-secondary" style="border: 1px solid var(--glass-chrome-2); border-left: none; background: var(--glass-bg-2);">
                     <i class="bi bi-search text-muted"></i>
                 </button>
@@ -28,7 +28,7 @@
             <?php if (empty($items)): ?>
                 <div class="col-12 text-center py-5">
                     <div class="empty-state-icon mx-auto mb-3"><i class="bi bi-bookmark"></i></div>
-                    <h5 class="text-white">No saved items found</h5>
+                    <h5 style="color: var(--text-primary);">No saved items found</h5>
                     <p class="text-muted">Try searching for something else or save items in the Marketplace!</p>
                     <a href="index.php?page=marketplace" class="btn btn-primary mt-2">Browse Marketplace</a>
                 </div>
@@ -58,7 +58,7 @@
 
                                 <!-- Item Details -->
                                 <div class="card-body d-flex flex-column">
-                                    <h5 class="fw-bold mb-1 text-white"><?= htmlspecialchars($item['item_name']) ?></h5>
+                                    <h5 class="fw-bold mb-1" style="color: var(--text-primary);"><?= htmlspecialchars($item['item_name']) ?></h5>
                                     <h4 class="mb-2" style="color: var(--accent);">₱<?= number_format($item['price'], 2) ?></h4>
                                     <p class="text-muted small mb-3 text-truncate"><?= htmlspecialchars($item['description']) ?></p>
                                     
@@ -71,7 +71,7 @@
                                             </div>
                                         <?php endif; ?>
                                         <div class="d-flex flex-column">
-                                            <small class="text-white lh-1 mb-1"><?= htmlspecialchars($item['full_name']) ?></small>
+                                            <small class="lh-1 mb-1" style="color: var(--text-primary);"><?= htmlspecialchars($item['full_name']) ?></small>
                                             <small class="text-muted lh-1" style="font-size: 0.7rem;">Saved Item</small>
                                         </div>
                                     </div>

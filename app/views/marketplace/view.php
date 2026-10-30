@@ -35,17 +35,17 @@
                                 </div>
                             <?php endif; ?>
                             <div>
-                                <span class="text-white fw-bold"><?= htmlspecialchars($item['full_name']) ?></span><br>
+                                <span class="fw-bold" style="color: var(--text-primary);"><?= htmlspecialchars($item['full_name']) ?></span><br>
                                 <small class="text-muted"><?= date('M j, Y', strtotime($item['created_at'])) ?></small>
                             </div>
                         </div>
-                        <h2 class="fw-bold text-white mb-1"><?= htmlspecialchars($item['item_name']) ?></h2>
+                        <h2 class="fw-bold mb-1" style="color: var(--text-primary);"><?= htmlspecialchars($item['item_name']) ?></h2>
                         <h3 style="color: var(--accent);">₱<?= number_format($item['price'], 2) ?></h3>
                         
                         <hr style="border-color: var(--glass-chrome-2); margin: 20px 0;">
                         
                         <h6 class="text-uppercase text-muted mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">Description</h6>
-                        <p class="text-light" style="line-height: 1.6;"><?= nl2br(htmlspecialchars($item['description'])) ?></p>
+                        <p style="line-height: 1.6; color: var(--text-primary);"><?= nl2br(htmlspecialchars($item['description'])) ?></p>
                         
                         <!-- MESSAGE SELLER / EDIT / DELETE BUTTONS -->
                         <div class="mt-4 pt-3 border-top" style="border-color: var(--glass-chrome-2) !important;">
