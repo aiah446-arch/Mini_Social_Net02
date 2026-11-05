@@ -4,7 +4,7 @@
 session_start();
 
 // Load config
-require_once dirname(__DIR__) . '/config/database.php';
+require_once dirname(__DIR__) . 'config/database.php';
 
 // Load models
 require_once dirname(__DIR__) . '/app/models/UserModel.php';
@@ -26,7 +26,7 @@ require_once dirname(__DIR__) . '/app/controllers/MarketplaceController.php';
 require_once dirname(__DIR__) . '/app/controllers/NotificationController.php';
 require_once dirname(__DIR__) . '/app/controllers/MessageController.php';
 
-$page = $_GET['page'] ?? 'feed';
+$page = $_GET['pages'] ?? 'feed';
 
 switch ($page) {
     // Auth
