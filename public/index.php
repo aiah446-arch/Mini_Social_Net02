@@ -74,6 +74,6 @@ switch ($page) {
     // Feed (default)
     case 'feed':
     default:
-        (new PostController())->feed();
+        (new PostController())->home();
         break;
 }

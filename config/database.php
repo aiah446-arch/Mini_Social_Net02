@@ -3,7 +3,7 @@
 // Database connection using PDO
 
 class Database {
-    private $host = "localhost";
+    private $host = "localhosts";
     private $db_name = "social_app";
     private $username = "root";
     private $password = "";  // XAMPP default: no password
